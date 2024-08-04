@@ -1,0 +1,237 @@
+# 双向链表
+
+```cpp
+#include <bits/stdc++.h>
+
+using namespace std;
+
+int q;
+
+int main() {
+    cin.tie(nullptr)->ios::sync_with_stdio(false);
+    cin >> q;
+    map<int, int> r, l;
+    r[0] = 1e9 + 1, l[1e9 + 1] = 0;
+    while (q--) {
+        int op, x, y;
+        cin >> op >> x;
+        if (op == 1) {
+            cin >> y;// Y 右边塞入 X
+            r[x] = r[y];
+            l[r[y]] = x;
+            r[y] = x;
+            l[x] = y;
+        } else { // 删除x
+            l[r[x]] = l[x];
+            r[l[x]] = r[x];
+        }
+    }
+    vector<int> ans;
+    int now = r[0];
+    while (1) {
+        if (now == 1e9 + 1) break;
+        ans.emplace_back(now);
+        now = r[now];
+    }
+    cout << ans.size() << '\n';
+    for (auto it : ans) cout << it << ' ';
+    return 0;
+}
+```
+
+# 应用
+
+## 一个复杂应用向模板题目
+
+### Berserk Monsters
+
+### 题面翻译
+
+有 $n$ 只怪物排成一排，每只怪物有 $a_i$ 点攻击与 $d_i$ 点防御。将会进行 $n$ 轮攻击，每一轮攻击每只怪物会对自己左侧的第一只与右侧的第一只存活的怪物造成 $a_i$ 的伤害。所有攻击结束后，若一只怪物在本轮中受到的伤害总和大于 $d_i$ 它就会退场。
+
+输出每一轮有多少怪物会退场。
+
+$n\leq 3\times 10^5,a_i,d_i\leq 10^9$。
+
+```cpp
+#include<bits/stdc++.h>
+
+using namespace std;
+
+void solve() {
+    int n; cin >> n;
+    vector<int> a(n + 10, 0), d(n + 10), L(n + 10), R(n + 10);
+    for (int i = 1; i <= n; i++) cin >> a[i];
+    for (int i = 1; i <= n; i++) cin >> d[i];
+    for (int i = 1; i <= n + 1; i++) R[i - 1] = i, L[i] = i - 1;
+    map<int, bool> out, vis;// out在不在当前链表中，vis是加入了可能集合没有
+    vector<int> prob, delist;
+    
+    auto add = [&](int u) -> void {
+        if (u < 1 || u > n) return;
+        if (!out[u] && !vis[u]) {
+            vis[u] = true;
+            prob.emplace_back(u);   
+        }
+    };
+    auto del = [&](int u) -> void {
+        L[R[u]] = L[u], R[L[u]] = R[u];
+        add(L[u]), add(R[u]);
+    };
+    
+    for (int i = 1; i <= n; i++) add(i);
+    for (int Z = 1; Z <= n; Z++) {
+        for (int i = 0; i < prob.size(); i++) {// 先加入表，不能直接删，要不然会影响后面的结果
+            int id = prob[i];
+            vis[id] = 0;// 出prob表
+            if (a[L[id]] + a[R[id]] > d[id]) {
+                delist.emplace_back(id);
+            }
+        }
+        prob.clear();
+        cout << delist.size() << ' ';
+        for (int i = 0; i < delist.size(); i++) { // 必须分两次执行
+            int val = delist[i];
+            out[val] = true;
+        }
+        for (int i = 0; i < delist.size(); i++) {
+            int val = delist[i];
+            del(val);
+        }
+        delist.clear();
+    }
+    cout << '\n';
+}
+
+signed main() {
+    cin.tie(nullptr)->ios::sync_with_stdio(false);
+    int t; cin >> t;
+    while (t--) solve();
+    return 0;
+}   
+```
+
+
+
+## 牛客小白月赛 CD（典）
+
+![image-20240216212112426](C:\Users\24996\AppData\Roaming\Typora\typora-user-images\image-20240216212112426.png)
+
+```cpp
+#include<bits/stdc++.h>
+
+using namespace std;
+
+const int N = 2e5 + 10;
+
+int n, k;
+int L[N], R[N];
+string s; 
+
+void del(int u) {
+	R[L[u]] = R[u];
+	L[R[u]] = L[u];
+}
+
+signed main() {
+    cin.tie(nullptr)->ios::sync_with_stdio(false);
+    cin >> n >> k >> s;
+    s = ' ' + s + '$';
+    int pos;
+    for (int i = 1; i <= n; i++) 
+    	if (s[i] == 'I') {
+    		pos = i;
+    		break;
+    	}
+    for (int i = 1; i <= n + 1; i++) L[i] = i - 1, R[i - 1] = i;
+	while (k--) {
+		string op; cin >> op;
+		if (op[0] == 'b') {
+			if (s[L[pos]] == '(' && s[R[pos]] == ')') {
+				del(L[pos]);
+				del(R[pos]);
+			} else if (s[L[pos]] != ' ') {
+				del(L[pos]);
+			}
+		} else if (op[0] == 'd') {
+			if (s[R[pos]] == '$') continue;
+			del(R[pos]);
+		} else if (op[0] == '<') { //left
+			if (s[L[pos]] == ' ') continue;
+			int idx = L[pos];
+			swap(s[idx], s[pos]);
+			pos = idx;
+		} else { // right
+			if (s[R[pos]] == '$') continue;
+			int idx = R[pos];
+			swap(s[idx], s[pos]);
+			pos = idx;
+		}
+	}
+	int now = R[0];
+	while (true) {
+		if (now == n + 1) break;
+		cout << s[now];
+		now = R[now];
+	}
+    return 0;
+}   
+```
+
+给定一个长度为 N 的整数数列：A1, A2, ... , AN。你要重复以下操作 K 次：
+每次选择数列中最小的整数（如果最小值不止一个，选择最靠前的），将其删除。
+并把与它相邻的整数加上被删除的数值。
+输出 K 次操作后的序列。
+
+```cpp
+#include <bits/stdc++.h>
+#define int long long
+#define pii pair<int, int>
+#define fi first
+#define se second
+
+using namespace std;
+
+const int N = 5e5 + 5;
+
+int L[N], R[N], cnt[N];
+int a[N], n, k;
+priority_queue<pii, vector<pii>, greater<pii>> heap;
+
+signed main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    cin >> n >> k;
+	for (int i = 1, x; i <= n; ++i) {
+		cin >> x;
+		heap.push({x, i});
+	}
+	for (int i = 1; i <= n + 1; ++i) {
+		L[i] = i - 1, R[i - 1] = i;
+	}
+	while (heap.size() > n - k) {
+		auto t = heap.top();
+		heap.pop();
+		int val = t.fi, id = t.se;
+		if (cnt[id]) {
+			heap.push({val + cnt[id], id});
+			cnt[id] = 0;
+		} else {
+			cnt[L[id]] += val, cnt[R[id]] += val;
+			R[L[id]] = R[id], L[R[id]] = L[id];
+		}
+	}
+	vector<pii> arr;
+	while (heap.size()) {
+		auto t = heap.top();
+		heap.pop();
+		arr.push_back({t.se, t.fi + cnt[t.se]});
+	}
+	sort(arr.begin(), arr.end());
+	for (auto it : arr) {
+		cout << it.se << ' ';
+	}
+    return 0;
+}
+```
+
